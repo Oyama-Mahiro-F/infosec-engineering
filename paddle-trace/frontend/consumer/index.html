@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>乒乓球拍防伪溯源 - 扫码验证</title>
+    <style>
+        :root {
+            --primary: #1a73e8;
+            --success: #0d904f;
+            --danger: #d93025;
+            --warning: #f9ab00;
+            --bg: #f8f9fa;
+            --card-bg: #ffffff;
+            --text: #202124;
+            --text-secondary: #5f6368;
+            --border: #dadce0;
+            --radius: 12px;
+            --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 16px;
+        }
+        .app-header {
+            text-align: center;
+            margin-bottom: 24px;
+            padding-top: 20px;
+        }
+        .app-header .logo {
+            font-size: 40px;
+            margin-bottom: 8px;
+        }
+        .app-header h1 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text);
+        }
+        .app-header p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 24px;
+            margin-bottom: 16px;
+            width: 100%;
+            max-width: 420px;
+            border: 1px solid var(--border);
+        }
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .scan-area {
+            background: linear-gradient(135deg, #e8f0fe 0%, #f0f4ff 100%);
+            border: 2px dashed #4285f4;
+            border-radius: var(--radius);
+            padding: 32px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .scan-area:hover { background: linear-gradient(135deg, #d2e3fc 0%, #e8eef9 100%); }
+        .scan-area .scan-icon { font-size: 48px; margin-bottom: 12px; }
+        .scan-area .scan-text { font-size: 15px; color: #1a73e8; font-weight: 500; }
+        .scan-area .scan-hint { font-size: 12px; color: #5f6368; margin-top: 6px; }
+        .result-authentic {
+            background: #e6f4ea;
+            border: 1px solid #0d904f;
+            border-radius: var(--radius);
+            padding: 16px;
+            text-align: center;
+        }
+        .result-counterfeit {
+            background: #fce8e6;
+            border: 1px solid #d93025;
+            border-radius: var(--radius);
+            padding: 16px;
+            text-align: center;
+        }
+        .result-icon { font-size: 48px; margin-bottom: 8px; }
+        .result-status { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+        .result-detail { font-size: 13px; color: var(--text-secondary); }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+        }
+        .info-row:last-child { border-bottom: none; }
+        .info-label { color: var(--text-secondary); }
+        .info-value { font-weight: 500; text-align: right; }
+        .timeline {
+            position: relative;
+            padding-left: 24px;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--border);
+        }
+        .timeline-item {
+            position: relative;
+            padding: 8px 0 16px 0;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -20px;
+            top: 12px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #1a73e8;
+            border: 2px solid #fff;
+            box-shadow: 0 0 0 2px #1a73e8;
+        }
+        .timeline-item .tl-action { font-size: 14px; font-weight: 500; }
+        .timeline-item .tl-location { font-size: 12px; color: var(--text-secondary); }
+        .timeline-item .tl-time { font-size: 11px; color: #999; margin-top: 2px; }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            transition: opacity 0.2s;
+        }
+        .btn-primary { background: #1a73e8; color: #fff; }
+        .btn-primary:hover { opacity: 0.9; }
+        .manual-input {
+            margin-top: 12px;
+            display: flex;
+            gap: 8px;
+        }
+        .manual-input input {
+            flex: 1;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+        }
+        .manual-input input:focus { border-color: #1a73e8; }
+        .manual-input button {
+            padding: 10px 16px;
+            background: #1a73e8;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .hidden { display: none; }
+        .footer {
+            margin-top: auto;
+            padding: 16px;
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .badge-success { background: #e6f4ea; color: #0d904f; }
+        .badge-info { background: #e8f0fe; color: #1a73e8; }
+    </style>
+</head>
+<body>
+    <div class="app-header">
+        <div class="logo">🏓</div>
+        <h1>乒乓球拍防伪溯源</h1>
+        <p>基于区块链 · NFC芯片验证 · 不可篡改</p>
+    </div>
+
+    <!-- 扫码区域 -->
+    <div class="card" id="scanCard">
+        <div class="card-title">📱 扫码验证真伪</div>
+        <div class="scan-area" onclick="simulateNFCScan()">
+            <div class="scan-icon">📡</div>
+            <div class="scan-text">点击模拟NFC扫码</div>
+            <div class="scan-hint">或将手机靠近球拍手柄的NFC标签区域</div>
+        </div>
+        <div class="manual-input">
+            <input type="text" id="productIdInput" placeholder="输入产品ID手动查询">
+            <button onclick="manualVerify()">查询</button>
+        </div>
+    </div>
+
+    <!-- 验证结果（默认隐藏） -->
+    <div class="card hidden" id="resultCard">
+        <div class="card-title">🔍 验证结果</div>
+        <div id="resultContent"></div>
+        <button class="btn btn-primary" style="margin-top:16px" onclick="resetScan()">重新验证</button>
+    </div>
+
+    <!-- 溯源详情（默认隐藏） -->
+    <div class="card hidden" id="traceCard">
+        <div class="card-title">📋 溯源记录（区块链存证）</div>
+        <div id="traceContent"></div>
+    </div>
+
+    <div class="footer">
+        <p>Powered by XuperChain · Go · NFC NTAG 424 DNA</p>
+        <p>信息安全工程概论 课程项目 © 2025</p>
+    </div>
+
+    <script>
+        // 模拟NFC标签数据
+        const demoProducts = {
+            'pingpong101': {
+                authentic: true,
+                product_id: 'pingpong101',
+                brand: 'Butterfly',
+                model: 'VISCARIA FL',
+                nfc_verified: true,
+                chain_verified: true,
+                produce_date: '2025-05-15',
+                manufacturer: 'Butterfly Japan Factory',
+                batch_no: 'BTY-2025-001',
+                current_status: 'sold',
+                trace_history: [
+                    { action: '生产完成', location: '日本东京工厂', time: '2025-05-15 10:30', operator: 'Butterfly' },
+                    { action: '出厂出库', location: '东京港仓库', time: '2025-05-16 14:00', operator: 'DHL物流' },
+                    { action: '海关清关', location: '上海浦东国际机场', time: '2025-05-18 09:15', operator: '海关' },
+                    { action: '物流中转', location: '上海区域配送中心', time: '2025-05-19 11:00', operator: '顺丰物流' },
+                    { action: '经销商入库', location: '北京朝阳区旗舰店', time: '2025-05-21 16:30', operator: '授权经销商' },
+                    { action: '售出', location: '北京朝阳区旗舰店', time: '2025-06-01 14:22', operator: '消费者' },
+                ]
+            },
+            'pingpong102': {
+                authentic: true,
+                product_id: 'pingpong102',
+                brand: 'Butterfly',
+                model: 'ZHANG JIKE ALC',
+                nfc_verified: true,
+                chain_verified: true,
+                produce_date: '2025-05-20',
+                manufacturer: 'Butterfly Japan Factory',
+                batch_no: 'BTY-2025-002',
+                current_status: 'in_stock',
+                trace_history: [
+                    { action: '生产完成', location: '日本东京工厂', time: '2025-05-20 08:00', operator: 'Butterfly' },
+                    { action: '出厂出库', location: '东京港仓库', time: '2025-05-21 10:00', operator: 'DHL物流' },
+                    { action: '经销商入库', location: '上海徐汇区旗舰店', time: '2025-05-25 15:00', operator: '授权经销商' },
+                ]
+            },
+            'pingpong104': {
+                authentic: false,
+                product_id: 'pingpong104',
+                nfc_verified: false,
+                chain_verified: false,
+                message: '产品未在区块链注册，疑为假冒产品'
+            }
+        };
+
+        function simulateNFCScan() {
+            // 模拟随机读取到pingpong101或pingpong102（正品）或pingpong104（假货）
+            const ids = ['pingpong101', 'pingpong102', 'pingpong104'];
+            const randomId = ids[Math.floor(Math.random() * ids.length)];
+            showResult(randomId);
+        }
+
+        function manualVerify() {
+            const input = document.getElementById('productIdInput').value.trim();
+            if (!input) {
+                alert('请输入产品ID');
+                return;
+            }
+            showResult(input);
+        }
+
+        function showResult(productId) {
+            let product = demoProducts[productId];
+
+            // 对未定义的ID，判定为假货
+            if (!product) {
+                product = {
+                    authentic: false,
+                    product_id: productId,
+                    nfc_verified: false,
+                    chain_verified: false,
+                    message: '产品未在区块链注册，疑为假冒产品'
+                };
+            }
+
+            const resultCard = document.getElementById('resultCard');
+            const traceCard = document.getElementById('traceCard');
+            const resultContent = document.getElementById('resultContent');
+            const traceContent = document.getElementById('traceContent');
+
+            resultCard.classList.remove('hidden');
+
+            if (product.authentic) {
+                // 正品结果
+                resultContent.innerHTML = `
+                    <div class="result-authentic">
+                        <div class="result-icon">✅</div>
+                        <div class="result-status" style="color:#0d904f">验证通过 - 正品</div>
+                        <div class="result-detail">NFC芯片认证通过 · 区块链溯源记录完整</div>
+                    </div>
+                    <div style="margin-top:16px">
+                        <div class="info-row">
+                            <span class="info-label">品牌</span>
+                            <span class="info-value">${product.brand}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">型号</span>
+                            <span class="info-value">${product.model}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">生产日期</span>
+                            <span class="info-value">${product.produce_date}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">批次号</span>
+                            <span class="info-value">${product.batch_no}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">当前状态</span>
+                            <span class="info-value">
+                                <span class="badge badge-${product.current_status === 'sold' ? 'success' : 'info'}">${product.current_status}</span>
+                            </span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">产品ID</span>
+                            <span class="info-value" style="font-family:monospace;font-size:12px">${product.product_id}</span>
+                        </div>
+                    </div>
+                `;
+
+                // 溯源历史
+                if (product.trace_history) {
+                    traceCard.classList.remove('hidden');
+                    let timelineHTML = '<div class="timeline">';
+                    product.trace_history.forEach(record => {
+                        timelineHTML += `
+                            <div class="timeline-item">
+                                <div class="tl-action">${record.action}</div>
+                                <div class="tl-location">📍 ${record.location}</div>
+                                <div class="tl-time">🕐 ${record.time} · ${record.operator}</div>
+                            </div>
+                        `;
+                    });
+                    timelineHTML += '</div>';
+                    traceContent.innerHTML = timelineHTML;
+                }
+            } else {
+                // 假货结果
+                resultContent.innerHTML = `
+                    <div class="result-counterfeit">
+                        <div class="result-icon">❌</div>
+                        <div class="result-status" style="color:#d93025">验证失败 - 疑为假冒产品</div>
+                        <div class="result-detail">${product.message || '请谨慎购买'}</div>
+                    </div>
+                    <div style="margin-top:16px;text-align:center;color:#5f6368">
+                        <p>该产品未在区块链上找到有效的溯源记录。</p>
+                        <p style="font-size:12px;margin-top:8px">建议：请通过正规渠道购买，并要求商家出示区块链溯源证明。</p>
+                    </div>
+                `;
+                traceCard.classList.add('hidden');
+            }
+        }
+
+        function resetScan() {
+            document.getElementById('resultCard').classList.add('hidden');
+            document.getElementById('traceCard').classList.add('hidden');
+            document.getElementById('productIdInput').value = '';
+        }
+    </script>
+</body>
+</html>

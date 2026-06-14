@@ -1,0 +1,233 @@
+version: "3.8"
+
+# =============================================================================
+# 基于区块链的乒乓球拍防伪溯源系统 - Docker Compose 编排
+# 包含：7节点XuperChain联盟链 + PostgreSQL + Redis + API服务 + 前端Nginx
+# =============================================================================
+
+services:
+  # ===========================================================================
+  # XuperChain 7节点联盟链网络
+  # ===========================================================================
+  xchain-node1:
+    image: xuperchain/xuperchain:5.3.0
+    container_name: xchain-node1
+    hostname: xchain-node1
+    ports:
+      - "37101:37101"
+      - "47101:47101"
+    volumes:
+      - ./data/node1:/data
+      - ./config/node1:/conf
+    environment:
+      - NODE_NAME=node1
+      - NODE_ROLE=brand_a
+    command: ["xchain", "--conf", "/conf/xchain.yaml"]
+    networks:
+      xchain-net:
+        ipv4_address: 172.25.0.11
+    restart: unless-stopped
+
+  xchain-node2:
+    image: xuperchain/xuperchain:5.3.0
+    container_name: xchain-node2
+    hostname: xchain-node2
+    ports:
+      - "37102:37102"
+      - "47102:47102"
+    volumes:
+      - ./data/node2:/data
+      - ./config/node2:/conf
+    environment:
+      - NODE_NAME=node2
+      - NODE_ROLE=brand_b
+    command: ["xchain", "--conf", "/conf/xchain.yaml"]
+    networks:
+      xchain-net:
+        ipv4_address: 172.25.0.12
+    restart: unless-stopped
+
+  xchain-node3:
+    image: xuperchain/xuperchain:5.3.0
+    container_name: xchain-node3
+    hostname: xchain-node3
+    ports:
+      - "37103:37103"
+      - "47103:47103"
+    volumes:
+      - ./data/node3:/data
+      - ./config/node3:/conf
+    environment:
+      - NODE_NAME=node3
+      - NODE_ROLE=logistics_a
+    command: ["xchain", "--conf", "/conf/xchain.yaml"]
+    networks:
+      xchain-net:
+        ipv4_address: 172.25.0.13
+    restart: unless-stopped
+
+  xchain-node4:
+    image: xuperchain/xuperchain:5.3.0
+    container_name: xchain-node4
+    hostname: xchain-node4
+    ports:
+      - "37104:37104"
+      - "47104:47104"
+    volumes:
+      - ./data/node4:/data
+      - ./config/node4:/conf
+    environment:
+      - NODE_NAME=node4
+      - NODE_ROLE=logistics_b
+    command: ["xchain", "--conf", "/conf/xchain.yaml"]
+    networks:
+      xchain-net:
+        ipv4_address: 172.25.0.14
+    restart: unless-stopped
+
+  xchain-node5:
+    image: xuperchain/xuperchain:5.3.0
+    container_name: xchain-node5
+    hostname: xchain-node5
+    ports:
+      - "37105:37105"
+      - "47105:47105"
+    volumes:
+      - ./data/node5:/data
+      - ./config/node5:/conf
+    environment:
+      - NODE_NAME=node5
+      - NODE_ROLE=regulator
+    command: ["xchain", "--conf", "/conf/xchain.yaml"]
+    networks:
+      xchain-net:
+        ipv4_address: 172.25.0.15
+    restart: unless-stopped
+
+  xchain-node6:
+    image: xuperchain/xuperchain:5.3.0
+    container_name: xchain-node6
+    hostname: xchain-node6
+    ports:
+      - "37106:37106"
+      - "47106:47106"
+    volumes:
+      - ./data/node6:/data
+      - ./config/node6:/conf
+    environment:
+      - NODE_NAME=node6
+      - NODE_ROLE=association
+    command: ["xchain", "--conf", "/conf/xchain.yaml"]
+    networks:
+      xchain-net:
+        ipv4_address: 172.25.0.16
+    restart: unless-stopped
+
+  xchain-node7:
+    image: xuperchain/xuperchain:5.3.0
+    container_name: xchain-node7
+    hostname: xchain-node7
+    ports:
+      - "37107:37107"
+      - "47107:47107"
+    volumes:
+      - ./data/node7:/data
+      - ./config/node7:/conf
+    environment:
+      - NODE_NAME=node7
+      - NODE_ROLE=ops
+    command: ["xchain", "--conf", "/conf/xchain.yaml"]
+    networks:
+      xchain-net:
+        ipv4_address: 172.25.0.17
+    restart: unless-stopped
+
+  # ===========================================================================
+  # 业务数据库 PostgreSQL 15
+  # ===========================================================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: paddle-trace-pg
+    environment:
+      POSTGRES_DB: paddle_trace
+      POSTGRES_USER: paddle
+      POSTGRES_PASSWORD: paddle_trace_2025
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - xchain-net
+    restart: unless-stopped
+
+  # ===========================================================================
+  # 查询缓存 Redis 7
+  # ===========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: paddle-trace-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - ./data/redis:/data
+    networks:
+      - xchain-net
+    restart: unless-stopped
+
+  # ===========================================================================
+  # Go API 业务服务
+  # ===========================================================================
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: paddle-trace-api
+    ports:
+      - "8080:8080"
+    environment:
+      - SERVER_PORT=8080
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=paddle
+      - DB_PASSWORD=paddle_trace_2025
+      - DB_NAME=paddle_trace
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - XCHAIN_NODE1=172.25.0.11:37101
+      - XCHAIN_NODE2=172.25.0.12:37101
+      - XCHAIN_NODE3=172.25.0.13:37101
+      - JWT_SECRET=paddle-trace-jwt-secret-key-2025
+    depends_on:
+      - postgres
+      - redis
+      - xchain-node1
+    networks:
+      - xchain-net
+    restart: unless-stopped
+
+  # ===========================================================================
+  # 前端 Nginx (静态文件服务)
+  # ===========================================================================
+  nginx:
+    image: nginx:alpine
+    container_name: paddle-trace-nginx
+    ports:
+      - "3000:80"
+    volumes:
+      - ./frontend/consumer/dist:/usr/share/nginx/html/consumer:ro
+      - ./frontend/admin/dist:/usr/share/nginx/html/admin:ro
+      - ./config/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api
+    networks:
+      - xchain-net
+    restart: unless-stopped
+
+networks:
+  xchain-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.25.0.0/24
