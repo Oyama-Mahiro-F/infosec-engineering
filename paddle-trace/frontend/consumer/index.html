@@ -234,84 +234,77 @@
     </div>
 
     <script>
-        // 模拟NFC标签数据
-        const demoProducts = {
-            'pingpong101': {
-                authentic: true,
-                product_id: 'pingpong101',
-                brand: 'Butterfly',
-                model: 'VISCARIA FL',
-                nfc_verified: true,
-                chain_verified: true,
-                produce_date: '2026-05-15',
-                manufacturer: 'Butterfly Japan Factory',
-                batch_no: 'BTY-2026-001',
-                current_status: 'sold',
-                trace_history: [
-                    { action: '生产完成', location: '日本东京工厂', time: '2026-05-15 10:30', operator: 'Butterfly' },
-                    { action: '出厂出库', location: '东京港仓库', time: '2026-05-16 14:00', operator: 'DHL物流' },
-                    { action: '海关清关', location: '上海浦东国际机场', time: '2026-05-18 09:15', operator: '海关' },
-                    { action: '物流中转', location: '上海区域配送中心', time: '2026-05-19 11:00', operator: '顺丰物流' },
-                    { action: '经销商入库', location: '北京朝阳区旗舰店', time: '2026-05-21 16:30', operator: '授权经销商' },
-                    { action: '售出', location: '北京朝阳区旗舰店', time: '2026-06-01 14:22', operator: '消费者' },
-                ]
-            },
-            'pingpong102': {
-                authentic: true,
-                product_id: 'pingpong102',
-                brand: 'Butterfly',
-                model: 'ZHANG JIKE ALC',
-                nfc_verified: true,
-                chain_verified: true,
-                produce_date: '2026-05-20',
-                manufacturer: 'Butterfly Japan Factory',
-                batch_no: 'BTY-2026-002',
-                current_status: 'in_stock',
-                trace_history: [
-                    { action: '生产完成', location: '日本东京工厂', time: '2026-05-20 08:00', operator: 'Butterfly' },
-                    { action: '出厂出库', location: '东京港仓库', time: '2026-05-21 10:00', operator: 'DHL物流' },
-                    { action: '经销商入库', location: '上海徐汇区旗舰店', time: '2026-05-25 15:00', operator: '授权经销商' },
-                ]
-            },
-            'pingpong104': {
-                authentic: false,
-                product_id: 'pingpong104',
-                nfc_verified: false,
-                chain_verified: false,
-                message: '产品未在区块链注册，疑为假冒产品'
-            }
+        const API_BASE = 'http://localhost:5050';
+
+        // 操作名称映射
+        const ACTION_NAMES = {
+            'outbound': '出厂出库', 'transit': '物流中转', 'arrival': '到货签收',
+            'inbound': '经销商入库', 'on_sale': '上架销售', 'sold': '已售出',
+            'produce': '生产完成', 'return': '退货', 'quality_check': '质检'
         };
 
-        function simulateNFCScan() {
-            // 模拟随机读取到pingpong101或pingpong102（正品）或pingpong104（假货）
+        async function simulateNFCScan() {
             const ids = ['pingpong101', 'pingpong102', 'pingpong104'];
             const randomId = ids[Math.floor(Math.random() * ids.length)];
-            showResult(randomId);
+            document.getElementById('productIdInput').value = randomId;
+
+            // 模拟NFC标签数据
+            const nfcPayload = {
+                tag_uid: '04A2B3C4D5E6F7',
+                sun_code: 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6',
+                counter: Math.floor(Date.now() / 1000),
+                product_id: randomId
+            };
+
+            try {
+                const resp = await fetch(`${API_BASE}/api/v1/products/verify-nfc`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(nfcPayload)
+                });
+                const json = await resp.json();
+                if (json.data && json.data.authentic) {
+                    // 获取溯源历史
+                    const histResp = await fetch(`${API_BASE}/api/v1/products/${randomId}`);
+                    const histJson = await histResp.json();
+                    showResult(json.data, histJson.data ? histJson.data.history : null);
+                } else {
+                    showResult(json.data || {authentic: false, product_id: randomId, message: '未找到'}, null);
+                }
+            } catch (e) {
+                alert('无法连接API服务，请确认已启动: python server.py');
+            }
         }
 
-        function manualVerify() {
+        async function manualVerify() {
             const input = document.getElementById('productIdInput').value.trim();
-            if (!input) {
-                alert('请输入产品ID');
-                return;
+            if (!input) { alert('请输入产品ID'); return; }
+
+            try {
+                const resp = await fetch(`${API_BASE}/api/v1/products/${input}`);
+                const json = await resp.json();
+                if (json.code === 200 && json.data && json.data.product) {
+                    const p = json.data.product;
+                    showResult({
+                        authentic: true, product_id: p.product_id,
+                        brand: p.brand, model: p.model,
+                        produce_date: p.produce_date, batch_no: p.batch_no,
+                        current_status: p.current_status, nfc_verified: true, chain_verified: true,
+                        message: '验证通过：该球拍为正品'
+                    }, json.data.history);
+                } else {
+                    showResult({
+                        authentic: false, product_id: input,
+                        nfc_verified: false, chain_verified: false,
+                        message: '产品未在区块链注册，疑为假冒产品'
+                    }, null);
+                }
+            } catch (e) {
+                alert('无法连接API服务，请确认已启动: python server.py');
             }
-            showResult(input);
         }
 
-        function showResult(productId) {
-            let product = demoProducts[productId];
-
-            // 对未定义的ID，判定为假货
-            if (!product) {
-                product = {
-                    authentic: false,
-                    product_id: productId,
-                    nfc_verified: false,
-                    chain_verified: false,
-                    message: '产品未在区块链注册，疑为假冒产品'
-                };
-            }
-
+        function showResult(product, history) {
             const resultCard = document.getElementById('resultCard');
             const traceCard = document.getElementById('traceCard');
             const resultContent = document.getElementById('resultContent');
@@ -320,7 +313,6 @@
             resultCard.classList.remove('hidden');
 
             if (product.authentic) {
-                // 正品结果
                 resultContent.innerHTML = `
                     <div class="result-authentic">
                         <div class="result-icon">✅</div>
@@ -328,64 +320,41 @@
                         <div class="result-detail">NFC芯片认证通过 · 区块链溯源记录完整</div>
                     </div>
                     <div style="margin-top:16px">
-                        <div class="info-row">
-                            <span class="info-label">品牌</span>
-                            <span class="info-value">${product.brand}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">型号</span>
-                            <span class="info-value">${product.model}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">生产日期</span>
-                            <span class="info-value">${product.produce_date}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">批次号</span>
-                            <span class="info-value">${product.batch_no}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">当前状态</span>
-                            <span class="info-value">
-                                <span class="badge badge-${product.current_status === 'sold' ? 'success' : 'info'}">${product.current_status}</span>
-                            </span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">产品ID</span>
-                            <span class="info-value" style="font-family:monospace;font-size:12px">${product.product_id}</span>
-                        </div>
-                    </div>
-                `;
+                        <div class="info-row"><span class="info-label">品牌</span><span class="info-value">${product.brand||'-'}</span></div>
+                        <div class="info-row"><span class="info-label">型号</span><span class="info-value">${product.model||'-'}</span></div>
+                        <div class="info-row"><span class="info-label">生产日期</span><span class="info-value">${product.produce_date||'-'}</span></div>
+                        <div class="info-row"><span class="info-label">批次号</span><span class="info-value">${product.batch_no||'-'}</span></div>
+                        <div class="info-row"><span class="info-label">当前状态</span><span class="info-value"><span class="badge badge-${product.current_status==='sold'?'success':'info'}">${product.current_status||'-'}</span></span></div>
+                        <div class="info-row"><span class="info-label">产品ID</span><span class="info-value" style="font-family:monospace;font-size:12px">${product.product_id}</span></div>
+                    </div>`;
 
-                // 溯源历史
-                if (product.trace_history) {
+                if (history && history.records && history.records.length > 0) {
                     traceCard.classList.remove('hidden');
-                    let timelineHTML = '<div class="timeline">';
-                    product.trace_history.forEach(record => {
-                        timelineHTML += `
-                            <div class="timeline-item">
-                                <div class="tl-action">${record.action}</div>
-                                <div class="tl-location">📍 ${record.location}</div>
-                                <div class="tl-time">🕐 ${record.time} · ${record.operator}</div>
-                            </div>
-                        `;
+                    let html = `<p style="font-size:12px;color:#999;margin-bottom:8px">区块链高度: ${history.count} 条记录 | 链式哈希验证</p><div class="timeline">`;
+                    history.records.forEach(r => {
+                        const actionName = ACTION_NAMES[r.action] || r.action;
+                        const t = new Date(r.timestamp * 1000).toLocaleString('zh-CN');
+                        html += `<div class="timeline-item">
+                            <div class="tl-action">${actionName}</div>
+                            <div class="tl-location">📍 ${r.location||'未知'}</div>
+                            <div class="tl-time">🕐 ${t} · ${r.operator||''}</div>
+                            <div style="font-size:10px;color:#999">链式哈希: ${(r.prev_record||'genesis').substring(0,16)}</div>
+                        </div>`;
                     });
-                    timelineHTML += '</div>';
-                    traceContent.innerHTML = timelineHTML;
+                    html += '</div>';
+                    traceContent.innerHTML = html;
                 }
             } else {
-                // 假货结果
                 resultContent.innerHTML = `
                     <div class="result-counterfeit">
                         <div class="result-icon">❌</div>
                         <div class="result-status" style="color:#d93025">验证失败 - 疑为假冒产品</div>
-                        <div class="result-detail">${product.message || '请谨慎购买'}</div>
+                        <div class="result-detail">${product.message||'请谨慎购买'}</div>
                     </div>
                     <div style="margin-top:16px;text-align:center;color:#5f6368">
                         <p>该产品未在区块链上找到有效的溯源记录。</p>
                         <p style="font-size:12px;margin-top:8px">建议：请通过正规渠道购买，并要求商家出示区块链溯源证明。</p>
-                    </div>
-                `;
+                    </div>`;
                 traceCard.classList.add('hidden');
             }
         }
