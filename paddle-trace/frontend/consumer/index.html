@@ -240,7 +240,15 @@
         const ACTION_NAMES = {
             'outbound': '出厂出库', 'transit': '物流中转', 'arrival': '到货签收',
             'inbound': '经销商入库', 'on_sale': '上架销售', 'sold': '已售出',
-            'produce': '生产完成', 'return': '退货', 'quality_check': '质检'
+            'produce': '生产完成', 'return': '退货', 'quality_check': '质检',
+            'sold_second': '二手转让'
+        };
+        // 流转类型中英文映射
+        const TRANSFER_NAMES = {
+            'manufacturer_to_logistics': '厂商→物流',
+            'logistics_to_distributor': '物流→经销商',
+            'distributor_to_consumer': '经销商→消费者(全新)',
+            'consumer_to_consumer': '消费者→消费者(二手)'
         };
 
         async function simulateNFCScan() {
@@ -330,12 +338,24 @@
 
                 if (history && history.records && history.records.length > 0) {
                     traceCard.classList.remove('hidden');
-                    let html = `<p style="font-size:12px;color:#999;margin-bottom:8px">区块链高度: ${history.count} 条记录 | 链式哈希验证</p><div class="timeline">`;
+                    let html = `<p style="font-size:12px;color:#999;margin-bottom:8px">区块链溯源记录: ${history.count} 条 | 链式哈希验证通过</p><div class="timeline">`;
                     history.records.forEach(r => {
-                        const actionName = ACTION_NAMES[r.action] || r.action;
+                        let actionName = ACTION_NAMES[r.action] || r.action;
+                        // 检查是否二手交易
+                        let extraTag = '';
+                        try {
+                            const extra = JSON.parse(r.extra_data || '{}');
+                            if (extra.is_second_hand) {
+                                extraTag = ' <span class="badge" style="background:#fce8e6;color:#d93025;font-size:10px">二手</span>';
+                                actionName = ACTION_NAMES['sold_second'] || actionName;
+                            }
+                            if (extra.price) {
+                                extraTag += ` <span style="font-size:11px;color:#999">¥${extra.price}</span>`;
+                            }
+                        } catch(e) {}
                         const t = new Date(r.timestamp * 1000).toLocaleString('zh-CN');
                         html += `<div class="timeline-item">
-                            <div class="tl-action">${actionName}</div>
+                            <div class="tl-action">${actionName}${extraTag}</div>
                             <div class="tl-location">📍 ${r.location||'未知'}</div>
                             <div class="tl-time">🕐 ${t} · ${r.operator||''}</div>
                             <div style="font-size:10px;color:#999">链式哈希: ${(r.prev_record||'genesis').substring(0,16)}</div>

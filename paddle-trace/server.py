@@ -386,20 +386,25 @@ def init_demo_data():
     logistics = "0xLogistics01"
     distributor = "0xDistributor01"
 
-    # 产品1：完整溯源链
+    # 产品1：完整溯源链（生产→物流→经销商→消费者1→消费者2二手）
     contract_register_product(manufacturer, {
         "product_id": "pingpong101", "brand": "Butterfly",
         "model": "VISCARIA FL", "batch_no": "BTY-2026-001",
         "material_hash": "sm3_hash_materials_abc", "qc_report_hash": "ipfs://QmReportXYZ",
         "produce_date": "2026-05-15"
     })
+    contract_append_trace(manufacturer, {"product_id": "pingpong101", "action": "produce", "location": "日本东京工厂(Butterfly)", "extra_data": "{\"weight\":\"86g\",\"type\":\"FL横拍\"}", "signature": "sig_mfr_00"})
     contract_transfer_ownership(manufacturer, {"product_id": "pingpong101", "new_owner": logistics, "transfer_type": "manufacturer_to_logistics"})
-    contract_append_trace(manufacturer, {"product_id": "pingpong101", "action": "outbound", "location": "日本东京工厂", "extra_data": "{}", "signature": "sig_mfr_01"})
-    contract_append_trace(logistics, {"product_id": "pingpong101", "action": "transit", "location": "东京港仓库", "extra_data": "{}", "signature": "sig_log_01"})
-    contract_append_trace(logistics, {"product_id": "pingpong101", "action": "arrival", "location": "上海浦东国际机场:海关", "extra_data": "{}", "signature": "sig_log_02"})
+    contract_append_trace(manufacturer, {"product_id": "pingpong101", "action": "outbound", "location": "东京港保税仓库", "extra_data": "{\"waybill\":\"SF2026-0516-001\"}", "signature": "sig_mfr_01"})
+    contract_append_trace(logistics, {"product_id": "pingpong101", "action": "transit", "location": "东京→上海(海运)", "extra_data": "{\"vessel\":\"Ever Given\",\"eta\":\"2026-05-18\"}", "signature": "sig_log_01"})
+    contract_append_trace(logistics, {"product_id": "pingpong101", "action": "arrival", "location": "上海浦东国际机场海关", "extra_data": "{\"customs_no\":\"SH2026-0518-889\"}", "signature": "sig_log_02"})
     contract_transfer_ownership(logistics, {"product_id": "pingpong101", "new_owner": distributor, "transfer_type": "logistics_to_distributor"})
-    contract_append_trace(distributor, {"product_id": "pingpong101", "action": "inbound", "location": "北京朝阳区旗舰店", "extra_data": "{}", "signature": "sig_dist_01"})
+    contract_append_trace(distributor, {"product_id": "pingpong101", "action": "inbound", "location": "北京朝阳区旗舰店(授权经销商)", "extra_data": "{\"store_code\":\"BJ-CY-001\"}", "signature": "sig_dist_01"})
     contract_transfer_ownership(distributor, {"product_id": "pingpong101", "new_owner": "0xConsumer01", "transfer_type": "distributor_to_consumer"})
+    contract_append_trace(distributor, {"product_id": "pingpong101", "action": "sold", "location": "北京朝阳区旗舰店", "extra_data": "{\"price\":\"1680.00\",\"sold_to\":\"0xConsumer01\"}", "signature": "sig_dist_02"})
+    # 二手交易：消费者1 → 消费者2
+    contract_transfer_ownership("0xConsumer01", {"product_id": "pingpong101", "new_owner": "0xConsumer02", "transfer_type": "consumer_to_consumer"})
+    contract_append_trace("0xConsumer01", {"product_id": "pingpong101", "action": "sold", "location": "闲鱼平台(二手转让)", "extra_data": "{\"price\":\"1000.00\",\"sold_to\":\"0xConsumer02\",\"is_second_hand\":true}", "signature": "sig_consumer01"})
 
     # 产品2：较短溯源链（仍在经销商库存）
     contract_register_product(manufacturer, {
@@ -420,6 +425,15 @@ print(f"[Init] Chain integrity: {'VALID' if bc.verify_chain()[0] else 'BROKEN'}"
 # =============================================================================
 # 第五部分：REST API
 # =============================================================================
+
+@app.route("/")
+def index():
+    """根路径返回前端页面"""
+    import os
+    html_path = os.path.join(os.path.dirname(__file__), "frontend", "consumer", "index.html")
+    if os.path.exists(html_path):
+        return open(html_path, encoding="utf-8").read()
+    return '<h1>Paddle Trace API</h1><p>Frontend not found. <a href="/api/v1/health">API Health</a></p>'
 
 @app.route("/api/v1/health")
 def health():
