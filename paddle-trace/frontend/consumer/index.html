@@ -107,37 +107,89 @@
         .info-label { color: var(--text-secondary); }
         .info-value { font-weight: 500; text-align: right; }
         .timeline {
-            position: relative;
-            padding-left: 24px;
+            display: flex;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            gap: 0;
+            padding: 16px 0;
+            align-items: flex-start;
+            -webkit-overflow-scrolling: touch;
         }
-        .timeline::before {
-            content: '';
-            position: absolute;
-            left: 8px;
-            top: 0;
-            bottom: 0;
-            width: 2px;
-            background: var(--border);
-        }
+        .timeline::-webkit-scrollbar { height: 6px; }
+        .timeline::-webkit-scrollbar-thumb { background: #c4c7cc; border-radius: 3px; }
         .timeline-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 100px;
+            max-width: 140px;
+            flex-shrink: 0;
             position: relative;
-            padding: 8px 0 16px 0;
+            padding: 8px 4px;
+            text-align: center;
         }
-        .timeline-item::before {
-            content: '';
-            position: absolute;
-            left: -20px;
-            top: 12px;
-            width: 10px;
-            height: 10px;
+        .timeline-item .tl-node {
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             background: #1a73e8;
-            border: 2px solid #fff;
-            box-shadow: 0 0 0 2px #1a73e8;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            flex-shrink: 0;
+            z-index: 1;
+            box-shadow: 0 2px 6px rgba(26,115,232,0.3);
         }
-        .timeline-item .tl-action { font-size: 14px; font-weight: 500; }
-        .timeline-item .tl-location { font-size: 12px; color: var(--text-secondary); }
-        .timeline-item .tl-time { font-size: 11px; color: #999; margin-top: 2px; }
+        .timeline-item.second-hand .tl-node {
+            background: #d93025;
+            box-shadow: 0 2px 6px rgba(217,48,37,0.3);
+        }
+        .timeline-item .tl-action {
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 6px;
+            line-height: 1.3;
+            color: #202124;
+        }
+        .timeline-item .tl-location {
+            font-size: 10px;
+            color: #5f6368;
+            margin-top: 2px;
+            line-height: 1.2;
+        }
+        .timeline-item .tl-time {
+            font-size: 9px;
+            color: #999;
+            margin-top: 2px;
+        }
+        .timeline-item .tl-price {
+            font-size: 10px;
+            color: #d93025;
+            font-weight: 600;
+            margin-top: 1px;
+        }
+        .timeline-arrow {
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+            padding: 0 2px;
+            margin-top: 8px;
+            color: #c4c7cc;
+            font-size: 16px;
+            min-width: 20px;
+            justify-content: center;
+        }
+        .tl-section-label {
+            font-size: 10px;
+            color: #1a73e8;
+            font-weight: 600;
+            text-align: center;
+            margin-top: 2px;
+            white-space: nowrap;
+        }
         .btn {
             display: block;
             width: 100%;
@@ -338,28 +390,39 @@
 
                 if (history && history.records && history.records.length > 0) {
                     traceCard.classList.remove('hidden');
-                    let html = `<p style="font-size:12px;color:#999;margin-bottom:8px">区块链溯源记录: ${history.count} 条 | 链式哈希验证通过</p><div class="timeline">`;
-                    history.records.forEach(r => {
+                    // 分阶段标签
+                    const PHASE_LABELS = {
+                        'produce': '生产', 'outbound': '出厂', 'transit': '运输',
+                        'arrival': '到港', 'inbound': '入库', 'sold': '售出'
+                    };
+                    let html = `<p style="font-size:12px;color:#999;margin-bottom:12px">区块链溯源: ${history.count} 条记录 | 哈希链验证通过 | 当前持有: <b>${product.current_owner||'未知'}</b></p><div class="timeline">`;
+                    history.records.forEach((r, idx) => {
                         let actionName = ACTION_NAMES[r.action] || r.action;
-                        // 检查是否二手交易
-                        let extraTag = '';
+                        let isSecondHand = false;
+                        let priceStr = '';
                         try {
                             const extra = JSON.parse(r.extra_data || '{}');
                             if (extra.is_second_hand) {
-                                extraTag = ' <span class="badge" style="background:#fce8e6;color:#d93025;font-size:10px">二手</span>';
-                                actionName = ACTION_NAMES['sold_second'] || actionName;
+                                isSecondHand = true;
+                                actionName = '二手转让';
                             }
-                            if (extra.price) {
-                                extraTag += ` <span style="font-size:11px;color:#999">¥${extra.price}</span>`;
-                            }
+                            if (extra.price) priceStr = extra.price;
                         } catch(e) {}
-                        const t = new Date(r.timestamp * 1000).toLocaleString('zh-CN');
-                        html += `<div class="timeline-item">
-                            <div class="tl-action">${actionName}${extraTag}</div>
-                            <div class="tl-location">📍 ${r.location||'未知'}</div>
-                            <div class="tl-time">🕐 ${t} · ${r.operator||''}</div>
-                            <div style="font-size:10px;color:#999">链式哈希: ${(r.prev_record||'genesis').substring(0,16)}</div>
-                        </div>`;
+                        const t = new Date(r.timestamp * 1000);
+                        const dateStr = `${t.getMonth()+1}/${t.getDate()} ${t.getHours()}:${String(t.getMinutes()).padStart(2,'0')}`;
+                        const phaseLabel = PHASE_LABELS[r.action] || '';
+                        html += `<div class="timeline-item${isSecondHand?' second-hand':''}">
+                            <div class="tl-node">${idx+1}</div>
+                            <div class="tl-action">${actionName}</div>
+                            <div class="tl-location">${r.location||''}</div>
+                            <div class="tl-time">${dateStr}</div>`;
+                        if (priceStr) html += `<div class="tl-price">¥${priceStr}</div>`;
+                        if (phaseLabel) html += `<div class="tl-section-label">${phaseLabel}</div>`;
+                        html += `</div>`;
+                        // 箭头（最后一个不加）
+                        if (idx < history.records.length - 1) {
+                            html += `<div class="timeline-arrow">→</div>`;
+                        }
                     });
                     html += '</div>';
                     traceContent.innerHTML = html;
