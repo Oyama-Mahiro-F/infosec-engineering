@@ -285,7 +285,9 @@ def contract_append_trace(caller, args):
     if count > 1:
         prev_raw = bc.get_state(f"trace:{pid}:{pid}_{count-1}")
         if prev_raw:
-            prev_hash = hashlib.sha256(prev_raw.encode()).hexdigest()[:16]
+            # sort_keys保证反序列化后重算哈希一致
+            prev_obj = json.loads(prev_raw)
+            prev_hash = hashlib.sha256(json.dumps(prev_obj, sort_keys=True).encode()).hexdigest()[:16]
 
     record = {
         "record_id": record_id, "product_id": pid,
