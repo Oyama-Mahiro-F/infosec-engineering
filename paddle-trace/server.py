@@ -545,6 +545,9 @@ def admin_reset():
     nfc = NFCService()
     nfc.register_tag("04A2B3C4D5E6F7", "00112233445566778899AABBCCDDEEFF")
     nfc.register_tag("04F7E6D5C4B3A2", "FFEEDDCCBBAA99887766554433221100")
+    # 重新授权角色（新bc的state是空的）
+    for acc, role in INIT_ACCOUNTS.items():
+        grant_role(acc, role)
     init_demo_data()
     return jsonify({"message": "reset complete", "height": len(bc.chain)})
 
