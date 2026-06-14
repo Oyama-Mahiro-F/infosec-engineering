@@ -192,7 +192,7 @@ func TestSecurity_UnauthorizedAccess(t *testing.T) {
 			"product_id":     "pingpong101",
 			"brand":          "Butterfly",
 			"model":          "VISCARIA FL",
-			"produce_date":   "2025-05-15",
+			"produce_date":   "2026-05-15",
 		}
 		reqJSON, _ := json.Marshal(reqBody)
 

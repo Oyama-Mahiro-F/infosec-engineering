@@ -95,10 +95,10 @@ func (s *ContractTestSuite) TestProductRegistry_RegisterProduct() {
 		"product_id":     "pingpong101",
 		"brand":          "Butterfly",
 		"model":          "VISCARIA FL",
-		"batch_no":       "BTY-2025-001",
+		"batch_no":       "BTY-2026-001",
 		"material_hash":  "sm3_hash_of_materials_abc123",
 		"qc_report_hash": "ipfs://QmQualityCheckReportXYZ",
-		"produce_date":   "2025-05-15",
+		"produce_date":   "2026-05-15",
 	}
 
 	reqJSON, err := json.Marshal(req)

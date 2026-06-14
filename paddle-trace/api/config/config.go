@@ -62,7 +62,7 @@ func Load() *Config {
 			Host:     getEnv("DB_HOST", "localhost"),
 			Port:     getEnv("DB_PORT", "5432"),
 			User:     getEnv("DB_USER", "paddle"),
-			Password: getEnv("DB_PASSWORD", "paddle_trace_2025"),
+			Password: getEnv("DB_PASSWORD", "paddle_trace_2026"),
 			DBName:   getEnv("DB_NAME", "paddle_trace"),
 			SSLMode:  getEnv("DB_SSLMODE", "disable"),
 		},
@@ -76,7 +76,7 @@ func Load() *Config {
 			CryptoType: getEnv("XCHAIN_CRYPTO", "sm2"),
 		},
 		JWT: JWTConfig{
-			Secret:     getEnv("JWT_SECRET", "paddle-trace-jwt-secret-key-2025"),
+			Secret:     getEnv("JWT_SECRET", "paddle-trace-jwt-secret-key-2026"),
 			ExpireHour: getEnvInt("JWT_EXPIRE_HOUR", 24),
 		},
 		NFC: NFCConfig{

@@ -151,7 +151,7 @@ services:
     environment:
       POSTGRES_DB: paddle_trace
       POSTGRES_USER: paddle
-      POSTGRES_PASSWORD: paddle_trace_2025
+      POSTGRES_PASSWORD: paddle_trace_2026
     ports:
       - "5432:5432"
     volumes:
@@ -191,14 +191,14 @@ services:
       - DB_HOST=postgres
       - DB_PORT=5432
       - DB_USER=paddle
-      - DB_PASSWORD=paddle_trace_2025
+      - DB_PASSWORD=paddle_trace_2026
       - DB_NAME=paddle_trace
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - XCHAIN_NODE1=172.25.0.11:37101
       - XCHAIN_NODE2=172.25.0.12:37101
       - XCHAIN_NODE3=172.25.0.13:37101
-      - JWT_SECRET=paddle-trace-jwt-secret-key-2025
+      - JWT_SECRET=paddle-trace-jwt-secret-key-2026
     depends_on:
       - postgres
       - redis
