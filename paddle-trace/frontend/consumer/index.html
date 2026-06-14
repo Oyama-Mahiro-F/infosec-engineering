@@ -24,39 +24,37 @@
             background: var(--bg);
             color: var(--text);
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px 16px;
+            padding: 16px;
         }
         .app-header {
             text-align: center;
-            margin-bottom: 24px;
-            padding-top: 20px;
+            margin-bottom: 16px;
         }
-        .app-header .logo {
-            font-size: 40px;
-            margin-bottom: 8px;
+        .app-header .logo { font-size: 28px; }
+        .app-header h1 { font-size: 18px; font-weight: 700; }
+        .app-header p { font-size: 12px; color: var(--text-secondary); }
+        /* 三栏横向布局 */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 300px 1fr 1fr;
+            gap: 16px;
+            height: calc(100vh - 90px);
         }
-        .app-header h1 {
-            font-size: 22px;
-            font-weight: 700;
-            color: var(--text);
-        }
-        .app-header p {
-            font-size: 14px;
-            color: var(--text-secondary);
-            margin-top: 4px;
+        @media (max-width: 900px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
         }
         .card {
             background: var(--card-bg);
             border-radius: var(--radius);
             box-shadow: var(--shadow);
-            padding: 24px;
-            margin-bottom: 16px;
-            width: 100%;
-            max-width: 420px;
+            padding: 20px;
             border: 1px solid var(--border);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
         }
         .card-title {
             font-size: 16px;
@@ -107,89 +105,39 @@
         .info-label { color: var(--text-secondary); }
         .info-value { font-weight: 500; text-align: right; }
         .timeline {
-            display: flex;
-            flex-wrap: nowrap;
-            overflow-x: auto;
-            gap: 0;
-            padding: 16px 0;
-            align-items: flex-start;
-            -webkit-overflow-scrolling: touch;
-        }
-        .timeline::-webkit-scrollbar { height: 6px; }
-        .timeline::-webkit-scrollbar-thumb { background: #c4c7cc; border-radius: 3px; }
-        .timeline-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-width: 100px;
-            max-width: 140px;
-            flex-shrink: 0;
             position: relative;
-            padding: 8px 4px;
-            text-align: center;
+            padding-left: 20px;
         }
-        .timeline-item .tl-node {
-            width: 32px;
-            height: 32px;
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 7px; top: 4px; bottom: 4px;
+            width: 2px;
+            background: #e0e0e0;
+        }
+        .timeline-item {
+            position: relative;
+            padding: 0 0 14px 0;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -17px; top: 4px;
+            width: 10px; height: 10px;
             border-radius: 50%;
             background: #1a73e8;
-            color: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 11px;
-            font-weight: 700;
-            flex-shrink: 0;
-            z-index: 1;
-            box-shadow: 0 2px 6px rgba(26,115,232,0.3);
+            border: 2px solid #fff;
+            box-shadow: 0 0 0 2px #1a73e8;
         }
-        .timeline-item.second-hand .tl-node {
+        .timeline-item.second-hand::before {
             background: #d93025;
-            box-shadow: 0 2px 6px rgba(217,48,37,0.3);
+            box-shadow: 0 0 0 2px #d93025;
         }
-        .timeline-item .tl-action {
-            font-size: 11px;
-            font-weight: 600;
-            margin-top: 6px;
-            line-height: 1.3;
-            color: #202124;
-        }
-        .timeline-item .tl-location {
-            font-size: 10px;
-            color: #5f6368;
-            margin-top: 2px;
-            line-height: 1.2;
-        }
-        .timeline-item .tl-time {
-            font-size: 9px;
-            color: #999;
-            margin-top: 2px;
-        }
-        .timeline-item .tl-price {
-            font-size: 10px;
-            color: #d93025;
-            font-weight: 600;
-            margin-top: 1px;
-        }
-        .timeline-arrow {
-            display: flex;
-            align-items: center;
-            flex-shrink: 0;
-            padding: 0 2px;
-            margin-top: 8px;
-            color: #c4c7cc;
-            font-size: 16px;
-            min-width: 20px;
-            justify-content: center;
-        }
-        .tl-section-label {
-            font-size: 10px;
-            color: #1a73e8;
-            font-weight: 600;
-            text-align: center;
-            margin-top: 2px;
-            white-space: nowrap;
-        }
+        .timeline-item .tl-action { font-size: 13px; font-weight: 600; }
+        .timeline-item .tl-location { font-size: 12px; color: var(--text-secondary); margin-top: 1px; }
+        .timeline-item .tl-time { font-size: 10px; color: #999; margin-top: 1px; }
+        .timeline-item .tl-hash { font-size: 9px; color: #bbb; margin-top: 1px; word-break: break-all; }
+        .timeline-item .tl-price { font-size: 11px; color: #d93025; font-weight: 600; }
         .btn {
             display: block;
             width: 100%;
@@ -248,41 +196,38 @@
 </head>
 <body>
     <div class="app-header">
-        <div class="logo">🏓</div>
-        <h1>乒乓球拍防伪溯源</h1>
+        <span class="logo">🏓</span>
+        <h1>乒乓球拍防伪溯源系统</h1>
         <p>基于区块链 · NFC芯片验证 · 不可篡改</p>
     </div>
 
-    <!-- 扫码区域 -->
-    <div class="card" id="scanCard">
-        <div class="card-title">📱 扫码验证真伪</div>
-        <div class="scan-area" onclick="simulateNFCScan()">
-            <div class="scan-icon">📡</div>
-            <div class="scan-text">点击模拟NFC扫码</div>
-            <div class="scan-hint">或将手机靠近球拍手柄的NFC标签区域</div>
+    <div class="main-grid">
+        <!-- 左栏：扫码 -->
+        <div class="card" id="scanCard">
+            <div class="card-title">📱 扫码验证真伪</div>
+            <div class="scan-area" onclick="simulateNFCScan()">
+                <div class="scan-icon">📡</div>
+                <div class="scan-text">点击模拟NFC扫码</div>
+                <div class="scan-hint">手机靠近球拍NFC标签</div>
+            </div>
+            <div class="manual-input">
+                <input type="text" id="productIdInput" placeholder="输入产品ID">
+                <button onclick="manualVerify()">查询</button>
+            </div>
         </div>
-        <div class="manual-input">
-            <input type="text" id="productIdInput" placeholder="输入产品ID手动查询">
-            <button onclick="manualVerify()">查询</button>
+
+        <!-- 中栏：验证结果 -->
+        <div class="card hidden" id="resultCard">
+            <div class="card-title">🔍 验证结果</div>
+            <div id="resultContent"></div>
+            <button class="btn btn-primary" style="margin-top:auto" onclick="resetScan()">重新验证</button>
         </div>
-    </div>
 
-    <!-- 验证结果（默认隐藏） -->
-    <div class="card hidden" id="resultCard">
-        <div class="card-title">🔍 验证结果</div>
-        <div id="resultContent"></div>
-        <button class="btn btn-primary" style="margin-top:16px" onclick="resetScan()">重新验证</button>
-    </div>
-
-    <!-- 溯源详情（默认隐藏） -->
-    <div class="card hidden" id="traceCard">
-        <div class="card-title">📋 溯源记录（区块链存证）</div>
-        <div id="traceContent"></div>
-    </div>
-
-    <div class="footer">
-        <p>Powered by XuperChain · Go · NFC NTAG 424 DNA</p>
-        <p>信息安全工程概论 课程项目 © 2026</p>
+        <!-- 右栏：溯源记录 -->
+        <div class="card hidden" id="traceCard">
+            <div class="card-title">📋 溯源记录（区块链存证）</div>
+            <div id="traceContent" style="flex:1; overflow-y:auto;"></div>
+        </div>
     </div>
 
     <script>
@@ -390,39 +335,24 @@
 
                 if (history && history.records && history.records.length > 0) {
                     traceCard.classList.remove('hidden');
-                    // 分阶段标签
-                    const PHASE_LABELS = {
-                        'produce': '生产', 'outbound': '出厂', 'transit': '运输',
-                        'arrival': '到港', 'inbound': '入库', 'sold': '售出'
-                    };
-                    let html = `<p style="font-size:12px;color:#999;margin-bottom:12px">区块链溯源: ${history.count} 条记录 | 哈希链验证通过 | 当前持有: <b>${product.current_owner||'未知'}</b></p><div class="timeline">`;
-                    history.records.forEach((r, idx) => {
+                    let html = `<p style="font-size:11px;color:#999;margin-bottom:10px">共 ${history.count} 条记录 · 哈希链验证通过 · 持有者: <b>${product.current_owner||'未知'}</b></p><div class="timeline">`;
+                    history.records.forEach(r => {
                         let actionName = ACTION_NAMES[r.action] || r.action;
                         let isSecondHand = false;
                         let priceStr = '';
                         try {
                             const extra = JSON.parse(r.extra_data || '{}');
-                            if (extra.is_second_hand) {
-                                isSecondHand = true;
-                                actionName = '二手转让';
-                            }
+                            if (extra.is_second_hand) { isSecondHand = true; actionName = '二手转让'; }
                             if (extra.price) priceStr = extra.price;
                         } catch(e) {}
                         const t = new Date(r.timestamp * 1000);
-                        const dateStr = `${t.getMonth()+1}/${t.getDate()} ${t.getHours()}:${String(t.getMinutes()).padStart(2,'0')}`;
-                        const phaseLabel = PHASE_LABELS[r.action] || '';
+                        const ds = `${t.getMonth()+1}/${t.getDate()} ${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`;
                         html += `<div class="timeline-item${isSecondHand?' second-hand':''}">
-                            <div class="tl-node">${idx+1}</div>
-                            <div class="tl-action">${actionName}</div>
-                            <div class="tl-location">${r.location||''}</div>
-                            <div class="tl-time">${dateStr}</div>`;
-                        if (priceStr) html += `<div class="tl-price">¥${priceStr}</div>`;
-                        if (phaseLabel) html += `<div class="tl-section-label">${phaseLabel}</div>`;
-                        html += `</div>`;
-                        // 箭头（最后一个不加）
-                        if (idx < history.records.length - 1) {
-                            html += `<div class="timeline-arrow">→</div>`;
-                        }
+                            <div class="tl-action">${actionName}${isSecondHand?' <span class="badge" style="background:#fce8e6;color:#d93025;font-size:9px">二手</span>':''}${priceStr?' <span class="tl-price">¥${priceStr}</span>':''}</div>
+                            <div class="tl-location">📍 ${r.location||'未知'}</div>
+                            <div class="tl-time">🕐 ${ds} · ${r.operator||''}</div>
+                            <div class="tl-hash">链式哈希: ${(r.prev_record||'genesis').substring(0,16)}</div>
+                        </div>`;
                     });
                     html += '</div>';
                     traceContent.innerHTML = html;
